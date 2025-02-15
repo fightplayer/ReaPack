@@ -2,8 +2,8 @@
 <index version="1" name="fightplayer's ReaPack">
   <category name="MIDI">
     <reapack name="MIDI_Data_Display.jsfx" type="effect" desc="MIDI Data Display">
-      <version name="0.0.2" author="fightplayer" time="2025-02-15T09:14:12Z">
-        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/4af487f948d803e47b66f42418eae9fd84141309/MIDI/MIDI_Data_Display.jsfx</source>
+      <version name="0.0.3" author="fightplayer" time="2025-02-15T10:00:24Z">
+        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/d99d6838e6090c6e205968a977d2f590c80a4c95/MIDI/MIDI_Data_Display.jsfx</source>
       </version>
     </reapack>
   </category>
