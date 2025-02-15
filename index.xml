@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <index version="1" name="fightplayer's ReaPack">
   <category name="MIDI">
-    <reapack name="MIDI_Data_Display.jsfx" type="effect" desc="MIDI Data Display">
+    <reapack name="JSFX_MIDIノート取得の例.jsfx" type="effect" desc="JSFX_MIDIノート取得の例">
       <version name="0.1.0" author="fightplayer" time="2025-02-15T10:00:24Z">
         <source>https://raw.githubusercontent.com/fightplayer/ReaPack/main/MIDI/JSFX_MIDIノート取得の例.jsfx</source>
       </version>
