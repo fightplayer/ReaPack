@@ -3,7 +3,7 @@
   <category name="MIDI">
     <reapack name="MIDI_Data_Display.jsfx" type="Script" desc="MIDI Data Display">
       <version name="0.0.1" author="fightplayer" time="2025-02-15T09:14:12Z">
-        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/refs/heads/main/MIDI_Data_Display.jsfx</source>
+        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/refs/heads/main/MIDI/MIDI_Data_Display.jsfx</source>
       </version>
     </reapack>
   </category>
