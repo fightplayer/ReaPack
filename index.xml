@@ -3,7 +3,7 @@
   <category name="Test">
     <reapack name="hello_world.jsfx" type="effect" desc="Hello World!">
       <version name="1" author="fightplayer" time="2025-02-15T10:00:24Z">
-        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/main/MIDI/hello_world.jsfx</source>
+        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/main/Test/hello_world.jsfx</source>
       </version>
     </reapack>
   </category>
