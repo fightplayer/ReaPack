@@ -1,0 +1,14 @@
+desc:"Hello World!"
+
+@init
+hello = "Hello World";
+
+@gfx
+gfx_r = 0.2;
+gfx_g = 0.8;
+gfx_b = 0.6;
+
+gfx_measurestr(hello, strw, strh);
+gfx_x = gfx_w / 2 - strw / 2;
+gfx_y = gfx_h / 2 - strh / 2;
+gfx_drawstr(hello);
