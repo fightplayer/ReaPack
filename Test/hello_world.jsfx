@@ -1,4 +1,4 @@
-desc:"Hello World!"
+desc:Hello World!
 
 @init
 hello = "Hello World";
