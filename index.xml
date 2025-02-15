@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <index version="1" name="fightplayer's ReaPack"/>
-  <reapack>
-  </reapack>
-  <metadata>
-    <link rel="website">https://github.com/fightplayer/ReaPack/</link>
-  </metadata>
+ <reapack name="MIDI_Data_Display.jsfx" type="Script">
+  <version name="0.0.1">
+   <source>https://raw.githubusercontent.com/fightplayer/ReaPack/refs/heads/main/MIDI_Data_Display.jsfx</source>
+  </version>
+ </reapack>
+ <metadata>
+  <link rel="website">https://github.com/fightplayer/ReaPack/</link>
+ </metadata>
