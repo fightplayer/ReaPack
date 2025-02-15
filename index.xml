@@ -1,2 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="fightplayer ReaPack"/>
+<index version="1" name="fightplayer's ReaPack"/>
+  <reapack>
+  </reapack>
+  <metadata>
+    <link rel="website">https://github.com/fightplayer/ReaPack/</link>
+  </metadata>
