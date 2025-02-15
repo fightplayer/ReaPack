@@ -1,32 +1,44 @@
-desc:JSFX MIDI Data Display
+desc: JSFX MIDI Data Display
 // このエフェクトは、受信したMIDIイベントの情報（オフセット、メッセージ）を画面に表示します。
 
 @init
-  // 初期化：最新イベントのオフセット、MIDIメッセージ、受信回数のカウンター、表示用文字列
-  last_offset = 0;
-  last_msg = 0;
-  msg_count = 0;
-  display_str = "まだMIDIイベントはありません。";
+// 初期化：各種変数の設定
+last_offset = 0;
+last_msg = 0;
+msg_count = 0;
+// 最初は「まだMIDIイベントはありません」と表示
+line1 = "まだMIDIイベントはありません。";
+line2 = "";
+line3 = "";
 
 @sample
-  // サンプル毎に受信したMIDIイベントを処理
-  while(midirecv(offset, msg))
+// サンプル毎に受信したMIDIイベントを処理
+while (midirecv(offset, msg))
   (
-    last_offset = offset;
-    last_msg = msg;
-    msg_count += 1;
-    // 受信したイベントをテキストにフォーマット
-    // ※ %X で整数を16進数（大文字）で表示します
-    display_str = sprintf("Event #%d\nOffset: %d\nMsg: 0x%X", msg_count, last_offset, last_msg);
+    msg_count += 1; last_offset = offset; last_msg = msg;
+    // 各行に分けて文字列を作成
+    line1 = sprintf("Event #%d", msg_count); line2 = sprintf("Offset: %d", last_offset); line3 = sprintf("Msg: 0x%X", last_msg);
   );
 
 @gfx
-  // 背景を黒でクリア
-  gfx_clear = 0;
-  // 描画色を白に設定
-  gfx_r = 1; gfx_g = 1; gfx_b = 1;
-  // 描画開始位置を指定（左上から10ピクセルずつ余白）
-  gfx_x = 10; gfx_y = 10;
-  // 受信したMIDI情報を表示
-  gfx_drawstr(display_str);
-  gfx_update();
+// 背景を黒でクリア
+gfx_clear = 0;
+// 描画色を白に設定
+gfx_r = 1;
+gfx_g = 1;
+gfx_b = 1;
+
+// 各行の開始位置を指定して描画
+gfx_x = 10;
+gfx_y = 10;
+gfx_drawstr(line1);
+
+gfx_x = 10;
+gfx_y = 30;
+gfx_drawstr(line2);
+
+gfx_x = 10;
+gfx_y = 50;
+gfx_drawstr(line3);
+
+gfx_update();
