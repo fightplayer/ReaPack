@@ -1,58 +1,24 @@
-desc: MIDI Data Display
-// MIDI入力された最新のノートを画面上に表示する
+desc:MIDI Data Display
 
 @init
-// ウィンドウを初期化（タイトル "MIDI Note Display", 幅320×高さ200, ドッキングなし）
-gfx_init("MIDI Note Display", 320, 200, 0);
-// 現在のノート番号（0～127）。-1 は「ノートなし」を意味する
-currentNote = -1;
+note = 0; // 初期化ノート変数
 
 @block
-// MIDIイベントを処理
-while (midirecv(offset, msg, note, vel)) (
-  // ステータスバイトの上位4ビットを取得（MIDIイベントタイプ）
-  type = msg & $xF0;
-  // ノートオン（velocity > 0）の場合、currentNote に設定
-  type == $x90 && vel > 0 ? (
-    currentNote = note;
-  );
-  // ノートオンで velocity == 0 またはノートオフ（$x80）の場合
-  (type == $x90 && vel == 0) || (type == $x80) ? (
-    // 発音中のノートがオフなら currentNote をクリア
-    currentNote == note ? ( currentNote = -1; ) : 0;
-  );
-  // 受信したMIDIイベントはパススルー
-  midisend(offset, msg, note, vel);
+// MIDI入力を処理
+while (midirecv(offset, msg1, msg23) ? (
+    msg1 == $x90 ? ( // ノートオンメッセージの場合
+        note = msg23 & 0x7F; // ノート番号を取得
+    );
 );
+
+// GUIの更新
+gfx_mode = 1;
+gfx_clear = 0;
+
+@slider
+// スライダーセクション（ここではスライダーを使わない）
 
 @gfx
-// 画面を黒でクリア
-gfx_clear();
-
-// フォントを設定（フォント番号1, "Arial", サイズ24）
-gfx_setfont(1, "Arial", 24);
-gfx_x = 10; gfx_y = 30;
-
-currentNote >= 0 ? (
-  // currentNote（0～127）からノート名とオクターブを算出
-  noteIndex = currentNote % 12;
-  octave = floor(currentNote / 12) - 1; // MIDIではC-1 (0)～G9 (127) とする場合
-  // ノート番号から名称を決定
-  noteIndex == 0  ? noteStr = "C"  :
-  noteIndex == 1  ? noteStr = "C#" :
-  noteIndex == 2  ? noteStr = "D"  :
-  noteIndex == 3  ? noteStr = "D#" :
-  noteIndex == 4  ? noteStr = "E"  :
-  noteIndex == 5  ? noteStr = "F"  :
-  noteIndex == 6  ? noteStr = "F#" :
-  noteIndex == 7  ? noteStr = "G"  :
-  noteIndex == 8  ? noteStr = "G#" :
-  noteIndex == 9  ? noteStr = "A"  :
-  noteIndex == 10 ? noteStr = "A#" :
-  noteIndex == 11 ? noteStr = "B"  : noteStr = "?";
-  // 表示文字を描画
-  gfx_printf("Note: %s%d", noteStr, octave);
-) : (
-  gfx_printf("No MIDI note");
-);
-gfx_update();
+gfx_x = 10;
+gfx_y = 10;
+gfx_printf("MIDI Note: %d", note);
