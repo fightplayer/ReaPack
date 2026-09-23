@@ -1,21 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <index version="1" name="fightplayer's ReaPack">
-  <category name="Test">
-    <reapack name="hello_world.jsfx" type="effect" desc="Hello World!">
-      <version name="1" author="fightplayer" time="2025-02-15T10:00:24Z">
-        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/425b1e70cdde4242544139ad79ed7eac020c7591/Test/hello_world.jsfx</source>
-      </version>
-    </reapack>
-  </category>
-  <category name="Chord Detector">
-    <reapack name="ChordDetector.lua" type="script" desc="Chord Detection Algorithm Library">
-      <version name="1.0" author="fightplayer" time="2026-07-20T10:06:14Z">
-        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/main/Scripts/ChordDetector.lua</source>
-      </version>
-    </reapack>
-    <reapack name="ChordDetectorUI.lua" type="script" desc="Interactive Chord Detector Window">
-      <version name="1.0" author="fightplayer" time="2026-07-20T10:11:15Z">
-        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/main/Scripts/ChordDetectorUI.lua</source>
+  <category name="JSFX Clones">
+    <reapack name="jsfx_ott.jsfx" type="effect" desc="OverTheTop - Multiband Dynamics (OTT-Style)">
+      <version name="1.0" author="fightplayer" time="2026-09-23T06:00:00Z">
+        <source>https://raw.githubusercontent.com/fightplayer/ReaPack/main/jsfx-clones/jsfx_ott.jsfx</source>
       </version>
     </reapack>
   </category>
