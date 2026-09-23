@@ -1,6 +1,7 @@
 desc:OTT Multiband Compressor (Upward/Downward Compander)
 // Tags: dynamics compressor multiband upward downward ott
 // Author: DSP Specialist
+// @version 1.2
 
 slider1:depth=100<0,100,0.1>Depth (%)
 slider2:time_scale=100<10,1000,1>Time (%)
