@@ -1,0 +1,273 @@
+desc:OverTheTop - Multiband Upward/Downward Dynamics
+// @description 3-band upward/downward dynamics processor (inspired by the classic OTT preset)
+// @version 1.0
+// @author fightplayer
+
+slider1:100<0,100,0.1>Depth (%)
+slider2:100<10,1000,1>Time (%)
+slider3:0<-24,24,0.1>In Gain (dB)
+slider4:0<-24,24,0.1>Out Gain (dB)
+slider5:100<0,100,1>Upward Comp (%)
+slider6:100<0,100,1>Downward Comp (%)
+slider7:0<-12,12,0.1>Low Output (dB)
+slider8:0<-12,12,0.1>Mid Output (dB)
+slider9:0<-12,12,0.1>High Output (dB)
+
+@init
+// Butterworth 2-pole Lowpass Filter
+function bq_lp_init(f0, q)
+instance(b0, b1, b2, a1, a2)
+local(w0, cosw, sinw, alpha, a0)
+(
+  w0 = 2 * $pi * f0 / srate;
+  cosw = cos(w0);
+  sinw = sin(w0);
+  alpha = sinw / (2 * q);
+  a0 = 1 + alpha;
+  b0 = ((1 - cosw) * 0.5) / a0;
+  b1 = (1 - cosw) / a0;
+  b2 = ((1 - cosw) * 0.5) / a0;
+  a1 = (-2 * cosw) / a0;
+  a2 = (1 - alpha) / a0;
+);
+
+// Butterworth 2-pole Highpass Filter
+function bq_hp_init(f0, q)
+instance(b0, b1, b2, a1, a2)
+local(w0, cosw, sinw, alpha, a0)
+(
+  w0 = 2 * $pi * f0 / srate;
+  cosw = cos(w0);
+  sinw = sin(w0);
+  alpha = sinw / (2 * q);
+  a0 = 1 + alpha;
+  b0 = ((1 + cosw) * 0.5) / a0;
+  b1 = (-(1 + cosw)) / a0;
+  b2 = ((1 + cosw) * 0.5) / a0;
+  a1 = (-2 * cosw) / a0;
+  a2 = (1 - alpha) / a0;
+);
+
+// Butterworth 2-pole Allpass Filter (Phase compensation)
+function bq_ap_init(f0, q)
+instance(b0, b1, b2, a1, a2)
+local(w0, cosw, sinw, alpha, a0)
+(
+  w0 = 2 * $pi * f0 / srate;
+  cosw = cos(w0);
+  sinw = sin(w0);
+  alpha = sinw / (2 * q);
+  a0 = 1 + alpha;
+  b0 = (1 - alpha) / a0;
+  b1 = (-2 * cosw) / a0;
+  b2 = (1 + alpha) / a0;
+  a1 = (-2 * cosw) / a0;
+  a2 = (1 - alpha) / a0;
+);
+
+function bq_process(x)
+instance(b0, b1, b2, a1, a2, x1, x2, y1, y2)
+local(y)
+(
+  y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+  abs(y) < 1e-15 ? y = 0;
+  x2 = x1; x1 = x;
+  y2 = y1; y1 = y;
+  y;
+);
+
+// Dynamics Processor per Band
+function comp_process(level_db, th_above, r_above, th_below, r_below, up_amt, dn_amt)
+instance(gr_dn, gr_up)
+local(diff_ab, diff_bl, k, half_k, inv_2k, ex)
+(
+  k = 6.0; half_k = 3.0; inv_2k = 1.0 / 12.0;
+
+  // Downward Compression (Above)
+  diff_ab = level_db - th_above;
+  diff_ab > half_k ? (
+    gr_dn = diff_ab * (1.0 / r_above - 1.0);
+  ) : diff_ab > -half_k ? (
+    ex = diff_ab + half_k;
+    gr_dn = (ex * ex * inv_2k) * (1.0 / r_above - 1.0);
+  ) : (
+    gr_dn = 0;
+  );
+  gr_dn *= dn_amt;
+
+  // Upward Compression (Below)
+  diff_bl = th_below - level_db;
+  diff_bl > half_k ? (
+    gr_up = diff_bl * (1.0 - 1.0 / r_below);
+  ) : diff_bl > -half_k ? (
+    ex = diff_bl + half_k;
+    gr_up = (ex * ex * inv_2k) * (1.0 - 1.0 / r_below);
+  ) : (
+    gr_up = 0;
+  );
+  gr_up *= up_amt;
+  gr_up = min(gr_up, 36.0); // Max upward boost ceiling
+
+  // Gate fade-out to prevent boosting pure noise/silence
+  level_db < -65.0 ? (
+    gr_up *= max(0.0, min(1.0, (level_db - -85.0) * 0.05));
+  );
+
+  gr_dn + gr_up;
+);
+
+// Constants
+Q_BUTTER = 0.7071067811865475;
+F_LOW = 88.3;
+F_HIGH = 2500.0;
+IN_BOOST = exp(5.2 * 0.11512925464970228); // OTT built-in +5.2dB band drive
+
+// RMS State
+env_p_low = 1e-12;
+env_p_mid = 1e-12;
+env_p_high = 1e-12;
+
+@slider
+depth = slider1 * 0.01;
+time_scale = slider2 * 0.01;
+in_gain = exp(slider3 * 0.11512925464970228);
+out_gain = exp(slider4 * 0.11512925464970228);
+up_pct = slider5 * 0.01;
+dn_pct = slider6 * 0.01;
+
+// Time Constants (Attack / Release)
+att_low = max(0.0005, 0.0478 * time_scale);
+rel_low = max(0.005,  0.2820 * time_scale);
+att_mid = max(0.0005, 0.0224 * time_scale);
+rel_mid = max(0.005,  0.2820 * time_scale);
+att_hig = max(0.0005, 0.0135 * time_scale);
+rel_hig = max(0.005,  0.1320 * time_scale);
+
+att_c_low = 1.0 - exp(-1.0 / (att_low * srate));
+rel_c_low = 1.0 - exp(-1.0 / (rel_low * srate));
+att_c_mid = 1.0 - exp(-1.0 / (att_mid * srate));
+rel_c_mid = 1.0 - exp(-1.0 / (rel_mid * srate));
+att_c_hig = 1.0 - exp(-1.0 / (att_hig * srate));
+rel_c_hig = 1.0 - exp(-1.0 / (rel_hig * srate));
+
+// Crossover Filters Init (LR4: Cascaded 2x Butterworth)
+lp0_L.bq_lp_init(F_LOW, Q_BUTTER); lp1_L.bq_lp_init(F_LOW, Q_BUTTER);
+lp0_R.bq_lp_init(F_LOW, Q_BUTTER); lp1_R.bq_lp_init(F_LOW, Q_BUTTER);
+
+hp0_L.bq_hp_init(F_LOW, Q_BUTTER); hp1_L.bq_hp_init(F_LOW, Q_BUTTER);
+hp0_R.bq_hp_init(F_LOW, Q_BUTTER); hp1_R.bq_hp_init(F_LOW, Q_BUTTER);
+
+lp2_L.bq_lp_init(F_HIGH, Q_BUTTER); lp3_L.bq_lp_init(F_HIGH, Q_BUTTER);
+lp2_R.bq_lp_init(F_HIGH, Q_BUTTER); lp3_R.bq_lp_init(F_HIGH, Q_BUTTER);
+
+hp2_L.bq_hp_init(F_HIGH, Q_BUTTER); hp3_L.bq_hp_init(F_HIGH, Q_BUTTER);
+hp2_R.bq_hp_init(F_HIGH, Q_BUTTER); hp3_R.bq_hp_init(F_HIGH, Q_BUTTER);
+
+// Phase Alignment All-pass Filter for Low Band
+ap0_L.bq_ap_init(F_HIGH, Q_BUTTER);
+ap0_R.bq_ap_init(F_HIGH, Q_BUTTER);
+
+// Make-up gains (+OTT Preset Defaults)
+gain_low_base = 10.3 + slider7;
+gain_mid_base = 5.7  + slider8;
+gain_hig_base = 10.3 + slider9;
+
+@sample
+s0 = spl0; s1 = spl1;
+dry_L = s0; dry_R = s1;
+
+// Input Stage
+proc_L = s0 * in_gain;
+proc_R = s1 * in_gain;
+
+// 3-Band LR4 Phase-Matched Crossover Split
+low_c_L = lp1_L.bq_process(lp0_L.bq_process(proc_L));
+low_c_R = lp1_R.bq_process(lp0_R.bq_process(proc_R));
+mh_L    = hp1_L.bq_process(hp0_L.bq_process(proc_L));
+mh_R    = hp1_R.bq_process(hp0_R.bq_process(proc_R));
+
+band_low_L = ap0_L.bq_process(low_c_L) * IN_BOOST;
+band_low_R = ap0_R.bq_process(low_c_R) * IN_BOOST;
+
+band_mid_L = lp3_L.bq_process(lp2_L.bq_process(mh_L)) * IN_BOOST;
+band_mid_R = lp3_R.bq_process(lp2_R.bq_process(mh_R)) * IN_BOOST;
+
+band_hig_L = hp3_L.bq_process(hp2_L.bq_process(mh_L)) * IN_BOOST;
+band_hig_R = hp3_R.bq_process(hp2_R.bq_process(mh_R)) * IN_BOOST;
+
+// RMS Power Detection (Stereo Linked)
+p_low = 0.5 * (band_low_L * band_low_L + band_low_R * band_low_R);
+p_mid = 0.5 * (band_mid_L * band_mid_L + band_mid_R * band_mid_R);
+p_hig = 0.5 * (band_hig_L * band_hig_L + band_hig_R * band_hig_R);
+
+p_low > env_p_low ? env_p_low += att_c_low * (p_low - env_p_low) : env_p_low += rel_c_low * (p_low - env_p_low);
+p_mid > env_p_mid ? env_p_mid += att_c_mid * (p_mid - env_p_mid) : env_p_mid += rel_c_mid * (p_mid - env_p_mid);
+p_hig > env_p_high ? env_p_high += att_c_hig * (p_hig - env_p_high) : env_p_high += rel_c_hig * (p_hig - env_p_high);
+
+db_low = 4.342944819032518 * log(max(env_p_low, 1e-12));
+db_mid = 4.342944819032518 * log(max(env_p_mid, 1e-12));
+db_hig = 4.342944819032518 * log(max(env_p_high, 1e-12));
+
+// Calculate Compression Curves
+dyn_low = comp_l.comp_process(db_low, -33.8, 66.7, -40.8, 4.17, up_pct, dn_pct);
+dyn_mid = comp_m.comp_process(db_mid, -30.3, 66.7, -41.8, 4.17, up_pct, dn_pct);
+dyn_hig = comp_h.comp_process(db_hig, -35.5, 1000.0, -41.8, 4.17, up_pct, dn_pct);
+
+// VCA Gain Application
+vca_low = exp((dyn_low + gain_low_base) * 0.11512925464970228);
+vca_mid = exp((dyn_mid + gain_mid_base) * 0.11512925464970228);
+vca_hig = exp((dyn_hig + gain_hig_base) * 0.11512925464970228);
+
+wet_L = band_low_L * vca_low + band_mid_L * vca_mid + band_hig_L * vca_hig;
+wet_R = band_low_R * vca_low + band_mid_R * vca_mid + band_hig_R * vca_hig;
+
+// Depth & Master Out
+spl0 = (dry_L * (1.0 - depth) + wet_L * depth) * out_gain;
+spl1 = (dry_R * (1.0 - depth) + wet_R * depth) * out_gain;
+
+@gfx 320 180
+gfx_clear = 0x181818;
+gfx_setfont(1, "Arial", 14, 'b');
+
+// Title
+gfx_r = 0.9; gfx_g = 0.9; gfx_b = 0.9;
+gfx_x = 18; gfx_y = 14;
+gfx_drawstr("OTT MULTIBAND COMPRESSOR");
+
+// Meter Layout
+cx = 20; cy = 40; cw = 85; ch = 120;
+zero_y = cy + ch * 0.5;
+
+function draw_bar(x, y, w, h, gr_up, gr_dn, label)
+local(bar_up, bar_dn)
+(
+  gfx_r = 0.12; gfx_g = 0.12; gfx_b = 0.12;
+  gfx_rect(x, y, w, h);
+  
+  // Center line
+  gfx_r = 0.3; gfx_g = 0.3; gfx_b = 0.3;
+  gfx_line(x, y + h * 0.5, x + w, y + h * 0.5);
+
+  // Upward bar (Cyan)
+  bar_up = min(h * 0.45, gr_up * 1.8);
+  bar_up > 0 ? (
+    gfx_r = 0.15; gfx_g = 0.75; gfx_b = 0.95;
+    gfx_rect(x + 10, (y + h * 0.5) - bar_up, (w - 20) * 0.5 - 2, bar_up);
+  );
+
+  // Downward bar (Orange)
+  bar_dn = min(h * 0.45, abs(gr_dn) * 1.8);
+  bar_dn > 0 ? (
+    gfx_r = 0.95; gfx_g = 0.55; gfx_b = 0.15;
+    gfx_rect(x + w * 0.5 + 2, y + h * 0.5, (w - 20) * 0.5 - 2, bar_dn);
+  );
+
+  // Label
+  gfx_r = 0.7; gfx_g = 0.7; gfx_b = 0.7;
+  gfx_x = x + w * 0.5 - 6; gfx_y = y + h - 16;
+  gfx_drawstr(label);
+);
+
+draw_bar(cx, cy, cw, ch, comp_l.gr_up, comp_l.gr_dn, "LOW");
+draw_bar(cx + cw + 10, cy, cw, ch, comp_m.gr_up, comp_m.gr_dn, "MID");
+draw_bar(cx + (cw + 10) * 2, cy, cw, ch, comp_h.gr_up, comp_h.gr_dn, "HIGH");
